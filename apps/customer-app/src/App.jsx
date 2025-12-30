@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext'; // Sirf yahan se import karein
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { Toaster } from 'react-hot-toast';
 
 // Components & Pages
 import Navbar from './components/Navbar';
@@ -11,15 +12,13 @@ import Checkout from './pages/Checkout';
 import RiderDashboard from './pages/RiderDashboard';
 
 const AppContent = () => {
-  const { user, login, logout } = useAuth(); // 'login' small letter mein
+  const { user, logout } = useAuth();
   const [view, setView] = useState('home');
   const [selectedStore, setSelectedStore] = useState(null);
-  const [cart, setCart] = useState([]);
-
+  const [cart, setCart] = useState([]); // Cart state yahan hai
   const [authState, setAuthState] = useState('landing');
   const [selectedRole, setSelectedRole] = useState('customer');
 
-  // 1. Agar user login nahi hai
   if (!user) {
     if (authState === 'landing') {
       return <Login setSelectedRole={setSelectedRole} setAuthState={setAuthState} />;
@@ -27,25 +26,38 @@ const AppContent = () => {
     return <AuthScreen initialRole={selectedRole} setAuthState={setAuthState} />;
   }
 
-  // 2. Agar Rider hai
   if (user.role === 'rider') {
     return <RiderDashboard logout={logout} />;
   }
 
-  // 3. Agar Customer hai
   return (
     <div className="min-h-screen bg-[#FDFDFD]">
+      {/* Universal Navbar for Customer views (Optional: check if you want it on menu/checkout) */}
+      {view !== 'checkout' && <Navbar logout={logout} cart={cart} setView={setView} />}
+
       {view === 'home' && (
-        <>
-          <Navbar logout={logout} />
-          <Home setView={setView} setSelectedStore={setSelectedStore} />
-        </>
+        <Home
+          setView={setView}
+          setSelectedStore={setSelectedStore}
+          cart={cart}  // <--- YEH MISSING THA (Fixed)
+        />
       )}
+
       {view === 'menu' && (
-        <StoreMenu store={selectedStore} setView={setView} cart={cart} setCart={setCart} />
+        <StoreMenu
+          store={selectedStore}
+          setView={setView}
+          cart={cart}
+          setCart={setCart}
+        />
       )}
+
       {view === 'checkout' && (
-        <Checkout cart={cart} setView={setView} setCart={setCart} />
+        <Checkout
+          cart={cart}
+          setView={setView}
+          setCart={setCart}
+        />
       )}
     </div>
   );
@@ -54,6 +66,7 @@ const AppContent = () => {
 export default function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-center" reverseOrder={false} />
       <AppContent />
     </AuthProvider>
   );

@@ -7,41 +7,20 @@ router.post('/signup', async (req, res) => {
     const { name, email, password, role, phone } = req.body;
 
     try {
-        // 1. Check karein ke user pehle se to nahi bana hua (Email ya Phone se)
-        let user = await User.findOne({
-            $or: [{ email: email }, { phone: phone }]
-        });
-
-        if (user) {
-            return res.status(400).json({ msg: "Bhai, ye User pehle se majood hy!" });
+        // Validation: Check karein agar email ya phone pehle se hai
+        let userExists = await User.findOne({ $or: [{ email }, { phone }] });
+        if (userExists) {
+            return res.status(400).json({ msg: "Ye Email ya Phone pehle se register hai!" });
         }
 
-        // 2. Naya User banayein
-        user = new User({
-            name,
-            email,
-            password, // Password abhi plain text hy
-            role,
-            phone
-        });
-
-        // 3. Database mein save karein
+        const user = new User({ name, email, password, role, phone });
         await user.save();
 
-        // 4. Jawab mein user ka data bhejein
         res.json({
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                phone: user.phone
-            }
+            user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone }
         });
-
     } catch (err) {
-        console.error("Signup Error:", err.message);
-        res.status(500).json({ msg: "Server mein koi masla aa gaya hy!" });
+        res.status(500).json({ msg: "Database Error: Signup nahi ho saka" });
     }
 });
 
@@ -49,29 +28,22 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
     const { identifier, password } = req.body;
     try {
-        let user = await User.findOne({
-            $or: [{ email: identifier }, { phone: identifier }]
-        });
+        // Email ya Phone dono par search karein
+        let user = await User.findOne({ $or: [{ email: identifier }, { phone: identifier }] });
 
         if (!user) {
-            return res.status(400).json({ msg: "User nahi mila! Pehle Signup karein." });
+            return res.status(400).json({ msg: "Account nahi mila! Pehle Register karein." });
         }
 
         if (user.password !== password) {
-            return res.status(400).json({ msg: "Ghalat Password!" });
+            return res.status(400).json({ msg: "Ghalat Password! Dobara check karein." });
         }
 
         res.json({
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                phone: user.phone
-            }
+            user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone }
         });
     } catch (err) {
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: "Server Error: Login nahi ho saka" });
     }
 });
 
