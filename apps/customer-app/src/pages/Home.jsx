@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { STORES_DATA } from '../data/stores';
-import { Package, Search, Star, Clock, ChevronRight, ShoppingCart, Sparkles, Facebook, Instagram, Twitter } from 'lucide-react';
+import { Package, Search, ChevronRight, Sparkles, Facebook, Instagram, Twitter, ShoppingBag, Bike } from 'lucide-react';
 
 const Footer = () => (
     <footer className="bg-white border-t p-12 mt-20">
@@ -29,7 +29,7 @@ const Footer = () => (
     </footer>
 );
 
-const Home = ({ setView, setSelectedStore, cart }) => {
+const Home = ({ setView, setSelectedStore }) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [activeCategory, setActiveCategory] = useState("All");
 
@@ -42,29 +42,37 @@ const Home = ({ setView, setSelectedStore, cart }) => {
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
-            <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b px-6 py-4 flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                    <div className="bg-black p-2 rounded-xl text-[#98FF98]"><Package size={20} /></div>
-                    <span className="font-black italic text-xl">Aasaan.</span>
-                </div>
-                <button onClick={() => setView('cart')} className="relative p-3 bg-gray-100 rounded-2xl">
-                    <ShoppingCart size={20} />
-                    {cart?.length > 0 && <span className="absolute -top-1 -right-1 bg-black text-[#98FF98] text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">{cart.length}</span>}
-                </button>
-            </nav>
+            <main className="flex-grow max-w-7xl mx-auto w-full p-6 text-left mt-6">
 
-            <main className="flex-grow max-w-7xl mx-auto w-full p-6 text-left">
-                <div className="bg-black rounded-[3rem] p-10 mb-10 relative overflow-hidden text-white">
+                {/* HERO SECTION */}
+                <div className="bg-black rounded-[3rem] p-10 mb-10 relative overflow-hidden text-white shadow-2xl">
                     <div className="relative z-10 max-w-lg">
-                        <h1 className="text-5xl font-black tracking-tighter mb-6 leading-none">Everything <br /> <span className="text-[#98FF98]">Instantly.</span></h1>
+                        <h1 className="text-6xl font-black tracking-tighter mb-6 leading-none italic uppercase">Fastest<br /> <span className="text-[#98FF98]">Delivery.</span></h1>
                         <div className="relative">
                             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input type="text" placeholder="Search stores or items..." className="w-full py-5 pl-14 pr-6 rounded-2xl text-black font-bold outline-none" onChange={(e) => setSearchQuery(e.target.value)} />
+                            <input
+                                type="text"
+                                placeholder="Search restaurants or food..."
+                                className="w-full py-5 pl-14 pr-6 rounded-2xl text-black font-bold outline-none shadow-xl"
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
                         </div>
                     </div>
-                    <Sparkles className="absolute right-10 bottom-0 text-white/5" size={250} />
+                    <Sparkles className="absolute right-10 bottom-0 text-white/5" size={300} />
                 </div>
 
+                {/* BAZAAR CUSTOM ORDER BANNER */}
+                <div className="bg-[#98FF98] rounded-[3rem] p-8 mb-10 border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row justify-between items-center group cursor-pointer"
+                    onClick={() => setView('customOrder')}>
+                    <div className="text-left">
+                        <h2 className="text-4xl font-black italic tracking-tighter text-black">BAZAAR SE KUCH MANGWANA HAI?</h2>
+                        <p className="font-bold text-black/60 mt-2 uppercase text-xs">Roti, Dahi, Soda ya kuch bhi... Rider hazir hai!</p>
+                        <button className="mt-6 bg-black text-[#98FF98] px-8 py-4 rounded-2xl font-black hover:scale-105 transition-all">ORDER ANYTHING</button>
+                    </div>
+                    <Bike size={120} className="text-black group-hover:rotate-12 transition-all mt-6 md:mt-0" />
+                </div>
+
+                {/* CATEGORIES */}
                 <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar">
                     {['All', 'Food', 'Mart', 'Health', 'Parcel'].map((cat) => (
                         <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-8 py-4 rounded-2xl font-black text-xs transition-all ${activeCategory === cat ? 'bg-black text-[#98FF98]' : 'bg-white text-gray-400 border'}`}>{cat}</button>
@@ -91,4 +99,5 @@ const Home = ({ setView, setSelectedStore, cart }) => {
         </div>
     );
 };
+
 export default Home;
