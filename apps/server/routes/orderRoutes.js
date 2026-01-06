@@ -2,86 +2,67 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 
-// 1. Order Place Karna
+// 1. Create New Order
 router.post('/create', async (req, res) => {
     try {
         const newOrder = new Order(req.body);
         const savedOrder = await newOrder.save();
+        const io = req.app.get('socketio');
+        if (io) io.emit('new_order_alert', savedOrder);
         res.status(201).json(savedOrder);
     } catch (err) {
-        res.status(500).json({ message: "Order Fail", error: err.message });
+        res.status(400).json({ message: err.message });
     }
 });
 
-
-// 2. Rider ke liye Pending Orders
-router.get('/pending', async (req, res) => {
+// 2. Order History
+router.get('/history/:userId', async (req, res) => {
     try {
-        const orders = await Order.find({ status: 'pending' }).sort({ createdAt: -1 });
-        res.status(200).json(orders);
-    } catch (err) {
-        res.status(500).json(err);
-    }
-});
-
-// 3. Bill Update API (Naya Route)
-router.put('/update-amount/:id', async (req, res) => {
-    try {
-        const updatedOrder = await Order.findByIdAndUpdate(
-            req.params.id,
-            { totalAmount: req.body.totalAmount },
-            { new: true }
-        );
-        res.status(200).json(updatedOrder);
-    } catch (err) {
-        res.status(500).json(err);
-    }
-});
-
-// 4. Customer History
-router.get('/user/:userId', async (req, res) => {
-    try {
-        const orders = await Order.find({ customer: req.params.userId }).sort({ createdAt: -1 });
-        res.status(200).json(orders);
-    } catch (err) {
-        res.status(500).json(err);
-    }
-});
-
-// A. Rider Specific View (Pending + Uske apne accepted orders)
-router.get('/rider-view', async (req, res) => {
-    try {
+        const { userId } = req.params;
         const orders = await Order.find({
-            status: { $in: ['pending', 'accepted'] }
+            $or: [{ customer: userId }, { rider: userId }]
         }).sort({ createdAt: -1 });
-        res.status(200).json(orders);
-    } catch (err) { res.status(500).json(err); }
+        res.json(orders);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 });
 
-// B. Flexible Status Update (Accept, Reject, Deliver sab isi se hoga)
+// 3. Market
+router.get('/market', async (req, res) => {
+    try {
+        const orders = await Order.find({ status: 'pending', rider: null }).sort({ createdAt: -1 });
+        res.json(orders);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// 4. Update Status (With Multi-Rider Conflict Check)
 router.put('/update-status/:id', async (req, res) => {
     try {
-        const { status } = req.body;
-        const updatedOrder = await Order.findByIdAndUpdate(
-            req.params.id,
-            { status: status },
-            { new: true }
-        );
-        res.status(200).json(updatedOrder);
-    } catch (err) { res.status(500).json(err); }
-});
+        const { status, riderId } = req.body;
+        const checkOrder = await Order.findById(req.params.id);
 
-// 5. Order Status Update (Delivered)
-router.put('/update/:id', async (req, res) => {
-    try {
+        // Agar kisi aur ne accept kar liya hai
+        if (status === 'accepted' && checkOrder.rider) {
+            return res.status(400).json({ message: "Too late! Order already taken by another rider." });
+        }
+
         const updatedOrder = await Order.findByIdAndUpdate(
             req.params.id,
-            { status: 'delivered' },
+            { status, rider: riderId },
             { new: true }
         );
-        res.status(200).json(updatedOrder);
+
+        const io = req.app.get('socketio');
+        if (io) {
+            io.emit('order_updated', updatedOrder);
+            if (status === 'accepted') io.emit('order_taken', req.params.id);
+        }
+        res.json(updatedOrder);
     } catch (err) {
-        res.status(500).json(err);
+        res.status(500).json({ message: err.message });
     }
 });
 

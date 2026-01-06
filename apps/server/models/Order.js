@@ -1,15 +1,29 @@
 const mongoose = require('mongoose');
 
 const OrderSchema = new mongoose.Schema({
-    customer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    rider: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    orderType: { type: String, default: 'normal' }, // 'normal' ya 'custom'
-    customRequest: { type: String }, // 5 roti, dahi wagera yahan aye ga
+    customer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    rider: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+
+    orderType: { type: String, enum: ['restaurant', 'custom'], default: 'restaurant' },
+
+    // Burger orders ke liye ye array use hoga
+    items: [{
+        name: String,
+        price: Number,
+        quantity: { type: Number, default: 1 }
+    }],
+
+    // Custom orders ke liye ye string use hogi
+    customRequest: { type: String }, // Required hata diya gaya hai
+
     address: { type: String, required: true },
+    phone: { type: String, required: true },
     totalAmount: { type: Number, default: 0 },
-    status: { type: String, default: 'pending' },
-    createdAt: { type: Date, default: Date.now }
-    // Items ko humne nikal diya hai taake bazaar order block na ho
-}, { strict: false }); // strict: false se extra fields error nahi dengi
+    status: {
+        type: String,
+        enum: ['pending', 'accepted', 'picked', 'delivered', 'cancelled'],
+        default: 'pending'
+    }
+}, { timestamps: true });
 
 module.exports = mongoose.model('Order', OrderSchema);

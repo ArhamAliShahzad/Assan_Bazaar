@@ -2,48 +2,38 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 
-// --- SIGNUP ROUTE ---
+// SIGNUP
 router.post('/signup', async (req, res) => {
-    const { name, email, password, role, phone } = req.body;
-
     try {
-        // Validation: Check karein agar email ya phone pehle se hai
-        let userExists = await User.findOne({ $or: [{ email }, { phone }] });
-        if (userExists) {
-            return res.status(400).json({ msg: "Ye Email ya Phone pehle se register hai!" });
-        }
-
+        const { name, email, password, role, phone } = req.body;
         const user = new User({ name, email, password, role, phone });
         await user.save();
-
+        // Clear response structure
         res.json({
-            user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone }
+            user: { id: user._id, _id: user._id, name: user.name, role: user.role }
         });
     } catch (err) {
-        res.status(500).json({ msg: "Database Error: Signup nahi ho saka" });
+        res.status(500).json({ msg: "Signup Failed" });
     }
 });
 
-// --- LOGIN ROUTE ---
+// LOGIN
 router.post('/login', async (req, res) => {
-    const { identifier, password } = req.body;
     try {
-        // Email ya Phone dono par search karein
-        let user = await User.findOne({ $or: [{ email: identifier }, { phone: identifier }] });
+        const { identifier, password } = req.body;
+        // Email ya Phone se login
+        const user = await User.findOne({ $or: [{ email: identifier }, { phone: identifier }] });
 
-        if (!user) {
-            return res.status(400).json({ msg: "Account nahi mila! Pehle Register karein." });
+        if (!user || user.password !== password) {
+            return res.status(400).json({ msg: "Invalid Credentials" });
         }
 
-        if (user.password !== password) {
-            return res.status(400).json({ msg: "Ghalat Password! Dobara check karein." });
-        }
-
+        // IMPORTANT: Sending both id and _id for safety
         res.json({
-            user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone }
+            user: { id: user._id, _id: user._id, name: user.name, role: user.role }
         });
     } catch (err) {
-        res.status(500).json({ msg: "Server Error: Login nahi ho saka" });
+        res.status(500).json({ msg: "Login Failed" });
     }
 });
 
